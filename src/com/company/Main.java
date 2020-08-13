@@ -2,9 +2,7 @@ package com.company;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 import java.io.*;
 import javax.swing.JFileChooser;
 
@@ -13,16 +11,12 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+
             //指定的txt文件名称
             String txtName = "1.txt";
             //获取当前程序目录路径
             String golbPath = null;
             //记录记事本中是否空行 如果存在空行则进行替换json文件处理逻辑
-            boolean isEmpty = false;
-            //判断文件是绝对路径还是相对路径
-            boolean isPath = true;
-            //判断获取需要修改文件目录的路径信息
-            boolean isContent = true;
             //文件相对路径
             String luj = null;
             //文本相对路径
@@ -35,127 +29,101 @@ public class Main {
             String temp = null;
             //输出到控制面板的信息
             String strPut = null;
-            // 替换
-            String line = null;
             //读取txt路径
             File txtFile = new File(txtPath);
             //默认配置相对路径
             golbPath = System.getProperty("user.dir");
+            //控制台输入
             Scanner scn = new Scanner(System.in);
+            //文件流读取
             InputStreamReader inputReader = new InputStreamReader(new FileInputStream(txtFile), "GBK");
             BufferedReader bf = new BufferedReader(inputReader);
             //获取所有的文件路径
             List<String> dirList = new ArrayList<String>();
             // 按行读取字符串
-            String txt;
+            String txt = null;
+            luj = "";
+            //路径和文本内容存储
+            HashMap<String, String> cfgDic = new HashMap<String, String>();
+            //得到每个文件名
+            List<String> infoList = new ArrayList<String>();
+            //存储替换字符信息
+            List<String> rep = new ArrayList<String>();
+            String nice = null;
+            //判断文件是否为空
             while ((txt = bf.readLine()) != null) {
-                if (!txt.isEmpty()) {
-                    //判断是否有需要的修改的json参数 否则进行下一个文件修改
-                    if (txt.contains(" ")) {
+                if (txt.isEmpty()){
+                    System.out.println("文件格式不正确！！");
+                    return;
+                }
+                //判断文件中是否带有空格
+                if (txt.contains(" ")) {
+                    //判断文件不为空
+                    if (!txt.isEmpty()) {
                         strPut = txt.split(" ")[0];
                         System.out.println(strPut);
                         srcStr = txt.split(" ")[1];
                         replaceStr = scn.next();
-                        //判断文件中的空行
-                        if (isEmpty == false) {
-                            //判断如果得到的路径中包含特殊字符进行切割
-                            if (luj.indexOf("\uFEFF") != -1) {
-                                int index = luj.indexOf("\uFEFF");
-                                temp = luj.substring(0, index) + luj.substring(index + 1);
-                            } else {
-                                temp = luj;
-                            }
-                            File fileExists = new File(temp);
-                            //判断文件是否存在
-                            if (fileExists.exists() && fileExists.isFile()) {
-                                FileReader in = new FileReader(temp);
-                                BufferedReader bufIn = new BufferedReader(in);
-                                // 内存流, 作为临时流
-                                CharArrayWriter tempStream = new CharArrayWriter();
-                                //根据替换符进行替换
-                                while ((line = bufIn.readLine()) != null) {
-                                    // 替换每行中, 符合条件的字符串
-                                    line = line.replaceAll(srcStr, replaceStr);
-                                    // 将该行写入内存
-                                    tempStream.write(line);
-                                    // 添加换行符
-                                    tempStream.append(System.getProperty("line.separator"));
-                                }
-                                // 关闭 输入流
-                                bufIn.close();
-                                // 将内存中的流 写入 文件
-                               // FileWriter out = new FileWriter(temp);
-                                BufferedWriter out= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), "UTF-8"));
-                                tempStream.writeTo(out);
-                                out.close();
-                            } else {
-                                System.out.println(temp + "文件不存在");
-                            }
+                        if (luj.indexOf("\uFEFF") != -1) {
+                            int index = luj.indexOf("\uFEFF");
+                            temp = luj.substring(0, index) + luj.substring(index + 1);
                         } else {
                             temp = luj;
-                            FileReader in = new FileReader(temp);
-                            BufferedReader bufIn = new BufferedReader(in);
-                            // 内存流, 作为临时流
-                            CharArrayWriter tempStream = new CharArrayWriter();
-                            while ((line = bufIn.readLine()) != null) {
-                                // 替换每行中, 符合条件的字符串
-                                line = line.replaceAll(srcStr, replaceStr);
-                                // 将该行写入内存
-                                tempStream.write(line);
-                                // 添加换行符
-                                tempStream.append(System.getProperty("line.separator"));
-                            }
-                            // 关闭 输入流
-                            bufIn.close();
-                            // 将内存中的流 写入 文件
-                            //FileWriter out = new FileWriter(temp);
-                            //修复修改中文字符乱码问题
-                            BufferedWriter out= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(temp), "UTF-8"));
-                            //out.write(temp);
-                            tempStream.writeTo(out);
-                            out.close();
                         }
-                    } else {
-                        //根据：判断是为新的盘符路径 非相对路径
-                        if (txt.contains(":")) {
-                            if (!new File(golbPath).exists()) {
-                                System.out.println("指定文件目录不存在，请仔细核对文件信息！！");
-                                break;
+                        //判断如果得到的路径中包含特殊字符进行切割
+                        File fileExists = new File(temp);
+                        if (fileExists.exists() && fileExists.isFile()) {
+                            //编码格式
+                            String encoding = "UTF-8";
+                            File file = new File(temp);
+                            Long filelength = file.length();
+                            //将文件转为byte
+                            byte[] filecontent = new byte[filelength.intValue()];
+                            FileInputStream c = new FileInputStream(file);
+                            //读取字节
+                            c.read(filecontent);
+                            c.close();
+                            //获取文件中的内容转为字符串
+                            String replaceData= new String(filecontent, encoding);
+                            //先替换文件内容
+                            replaceData = replaceData.replaceAll(srcStr, replaceStr);
+                            rep.add(replaceData);
+                            if (rep.size() > 0) {
+                                nice = rep.get(0).replaceAll(srcStr, replaceStr);
                             }
-                            luj = txt;
-                            dirList.add(luj);
-                            isPath = false;//判断读取的是绝对路径 true读相对路径
+                            //存储要修改的文件路径及文件信息
+                            cfgDic.put(infoList.get(0), nice);
+                            //如果key存在 则修改value
+                            if (cfgDic.containsKey(infoList.get(0))) {
+                                cfgDic.put(infoList.get(0), nice);
+                            }
                         } else {
-                            if (isPath == true) {
-                                if (isContent == true) {
-                                    //获取全部路径
-                                    luj = golbPath + File.separator + txt;
-                                    dirList.add(luj);
-                                    isContent = false;
-                                } else {
-                                    luj = dirList.get(0) + File.separator + txt;
-                                    dirList.add(luj);
-                                }
-                            } else {
-                                luj = dirList.get(0) + File.separator + txt;
-                            }
+                            System.out.println(temp+"文件不存在");
+                            return;
                         }
                     }
-                }
-                //输出空行信息
-                else {
-                    isEmpty = true;
+                } else {
+                    try{
+                        if (txt.contains(".")) {
+                            rep.clear();//每次处理下一个文件时提前清空
+                            infoList.clear();
+                            luj = dirList.get(0) + File.separator + txt;
+                            infoList.add(txt);
+                            dirList.add(luj);
+                        } else {
+                            luj = golbPath + File.separator + txt;
+                            dirList.add(luj);
+                        }
+                    }
+                    catch (Exception ex){
+                            System.out.println("文件格式错误");
+                            return;
+                    }
                 }
             }
+            createDialog(dirList.get(0), cfgDic);
             bf.close();
             inputReader.close();//关闭
-            try {
-                String oldPathDir = dirList.get(0);
-                createDialog(oldPathDir);
-
-            } catch (Exception ex) {
-                System.out.println("选择文件错误：" + ex.toString());
-            }
             //控制台程序完成后停留
             System.in.read();
         } catch (Exception e) {
@@ -168,7 +136,7 @@ public class Main {
      *
      * @oldPathDir 旧文件地址
      */
-    public static void createDialog(String oldPathDir) {
+    public static void createDialog(String oldPathDir, HashMap<String, String> hashMap) {
         try {
             //声明弹出
             JFileChooser fileChooser = new JFileChooser();
@@ -180,35 +148,87 @@ public class Main {
             fileChooser.showOpenDialog(null);
             //获取选择的文件
             File nullFile = fileChooser.getSelectedFile();
+            String strcount=nullFile.toString();
+            String compareStr="\\";
+            int index=0;
+            int indexStart=0;
+            int compareStrLength=strcount.length();
+            while (true){
+                int tm = strcount.indexOf(compareStr,indexStart);
+                if( tm >= 0){
+                    index ++;
+                    //  没查找一次就从新计算下次开始查找的位置
+                    indexStart = tm+compareStrLength;
+                }else{
+                    //直到没有匹配结果为止
+                    break;
+                }
+            }
+            if (index<=1){
+                System.out.println("请选择文件夹");
+                createDialog(oldPathDir, hashMap);
+            }
             if (nullFile != null) {
-                //获取新的文件路径
                 String newPathDir = fileChooser.getSelectedFile().getAbsolutePath();
+                //获取新的文件路径
                 //判断旧文件路径是否是文件否则就是目录
                 if ((new File(oldPathDir)).isFile()) {
                     copyFile(new File(oldPathDir), new File(newPathDir));
                 } else if ((new File(oldPathDir)).isDirectory()) {
                     copyDirectory(oldPathDir, newPathDir);
                 }
+                if (hashMap.size()>0){
+                    contentWrite(hashMap,newPathDir);
+                }
+
             } else {
                 System.out.println("重新选择需要copy的文件路径，1重新选择，0取消copy文件操作");
                 Scanner scn = new Scanner(System.in);
                 int number = scn.nextInt();
                 if (number == 1) {
-                    createDialog(oldPathDir);
-                }else {
+                    createDialog(oldPathDir, hashMap);
+                } else {
                     return;
                 }
-
             }
         } catch (Exception ex) {
             System.out.println("选择文件弹出错误：" + ex.toString());
         }
     }
 
-    /*
-     * @sourceFile 旧文件
-     * @targetFile 新文件
-     * */
+    /**
+     * @param hashMap  需要修改的文件 及对应的内容
+     * @param dirfile  选定新的文件路径
+     */
+    private  static  void  contentWrite(HashMap<String,String> hashMap,String dirfile){
+        BufferedWriter fw;
+        //判断字典中是否含有数据
+            for (String key : hashMap.keySet()) {
+                String fileName = key;
+                String content = hashMap.get(key);
+                try {
+                    File file = new File(dirfile+File.separator+fileName);
+                    if (file.exists()){
+                        //创建字符输出流对象，负责向文件内写入
+                        //fw = new FileWriter(dirfile+File.separator+fileName);
+                         fw= new BufferedWriter(new OutputStreamWriter(new FileOutputStream(dirfile+File.separator+fileName), "UTF-8"));
+                        //将str里面的内容读取到fw所指定的文件中
+                        fw.write(content);
+                        fw.close();
+                    }
+                    else{
+                        System.out.println(dirfile+File.separator+fileName+"：文件不存在");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+    }
+
+    /**
+     * @param sourceFile  旧文件
+     * @param targetFile  新文件
+     */
     private static void copyFile(File sourceFile, File targetFile) {
         if (!sourceFile.canRead()) {
             System.out.println("源文件" + sourceFile.getAbsolutePath() + "不可读，无法复制！");
@@ -255,10 +275,10 @@ public class Main {
         }
     }
 
-    /*
-     * @sourceFile 旧文件夹
-     * @targetFile 新文件夹
-     * */
+    /**
+     * @param sourcePathString  旧文件夹
+     * @param targetPathString  新文件夹
+     */
     private static void copyDirectory(String sourcePathString, String targetPathString) {
         if (!new File(sourcePathString).canRead()) {
             System.out.println("源文件夹" + sourcePathString + "不可读，无法复制！");
@@ -276,7 +296,6 @@ public class Main {
             System.out.println("复制文件夹" + sourcePathString + "到" + targetPathString + "完成");
         }
     }
-
 
     /**
      * @param fileJsonPath json文件路径
